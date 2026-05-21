@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import config from '../config';
 
-const pool = new Pool({ connectionString: config.db_url })
+export const pool = new Pool({ connectionString: config.db_url })
 
 export const initDB = async () => {
     await pool.query(`
