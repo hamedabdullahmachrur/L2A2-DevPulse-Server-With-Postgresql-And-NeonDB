@@ -195,3 +195,18 @@ export const updateIssue = async (req: Request, res: Response): Promise<void> =>
   sendSuccess(res, updatedIssue, 'Issue updated successfully');
 };
 
+// ─── DELETE /api/issues/:id ───────────────────────────────────────────────────
+export const deleteIssue = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const issue = await queryOne<Issue>('SELECT id FROM issues WHERE id = $1', [id]);
+
+  if (!issue) {
+    sendError(res, 'Issue not found.', StatusCodes.NOT_FOUND);
+    return;
+  }
+
+  await queryRun('DELETE FROM issues WHERE id = $1', [id]);
+
+  sendSuccess(res, null, 'Issue deleted successfully');
+};
