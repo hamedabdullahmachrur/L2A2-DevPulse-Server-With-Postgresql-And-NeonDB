@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { queryMany, queryOne, queryRun } from "../../utils/dbQuery";
+import { queryMany, queryOne } from "../../utils/dbQuery";
 import type { CreateIssueBody, GetIssuesQuery, Issue, IssueWithReporter, UpdateIssueBody, UserRole } from "../../types";
 import { StatusCodes } from "http-status-codes";
 import { sendError, sendSuccess } from "../../utils/responseHelper";
@@ -64,4 +64,51 @@ export const createIssue = async (req: Request, res: Response): Promise<void> =>
   );
 
   sendSuccess(res, newIssue, 'Issue created successfully', StatusCodes.CREATED);
+};
+
+// ─── GET /api/issues ──────────────────────────────────────────────────────────
+export const getAllIssues = async (req: Request, res: Response): Promise<void> => {
+  const { sort = 'newest', type, status }: GetIssuesQuery = req.query as GetIssuesQuery;
+
+  // ── Build dynamic WHERE clause ───────────────────────────────────────────────
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (type) {
+    params.push(type);
+    conditions.push(`type = $${params.length}`);
+  }
+
+  if (status) {
+    params.push(status);
+    conditions.push(`status = $${params.length}`);
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  const order = sort === 'oldest' ? 'ASC' : 'DESC';
+
+  const issues = await queryMany<Issue>(
+    `SELECT * FROM issues ${where} ORDER BY created_at ${order}`,
+    params
+  );
+
+  const issuesWithReporters = await attachReporters(issues);
+
+  sendSuccess(res, issuesWithReporters);
+};
+
+// ─── GET /api/issues/:id ──────────────────────────────────────────────────────
+export const getIssueById = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+
+  const issue = await queryOne<Issue>('SELECT * FROM issues WHERE id = $1', [id]);
+
+  if (!issue) {
+    sendError(res, 'Issue not found.', StatusCodes.NOT_FOUND);
+    return;
+  }
+
+  const [issueWithReporter] = await attachReporters([issue]);
+
+  sendSuccess(res, issueWithReporter);
 };
