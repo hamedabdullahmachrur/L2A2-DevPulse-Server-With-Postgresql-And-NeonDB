@@ -10,7 +10,7 @@ const attachReporters = async (issues: Issue[]): Promise<IssueWithReporter[]> =>
   const reporterIds = [...new Set(issues.map((i) => i.reporter_id))];
 
   const reporters = await queryMany<{ id: number; name: string; role: UserRole }>(
-    'SELECT id, name, role FROM users WHERE id = ANY($1)',
+    'SELECT id, name, role FROM users WHERE id = ANY($1::int[])',
     [reporterIds]
   );
 
@@ -23,7 +23,6 @@ const attachReporters = async (issues: Issue[]): Promise<IssueWithReporter[]> =>
   }));
 };
 
-// ─── POST /api/issues ─────────────────────────────────────────────────────────
 export const createIssue = async (req: Request, res: Response): Promise<void> => {
   const { title, description, type }: CreateIssueBody = req.body;
   const reporterId = req.user!.id;
@@ -66,7 +65,6 @@ export const createIssue = async (req: Request, res: Response): Promise<void> =>
   sendSuccess(res, newIssue, 'Issue created successfully', StatusCodes.CREATED);
 };
 
-// ─── GET /api/issues ──────────────────────────────────────────────────────────
 export const getAllIssues = async (req: Request, res: Response): Promise<void> => {
   const { sort = 'newest', type, status }: GetIssuesQuery = req.query as GetIssuesQuery;
 
@@ -97,7 +95,6 @@ export const getAllIssues = async (req: Request, res: Response): Promise<void> =
   sendSuccess(res, issuesWithReporters);
 };
 
-// ─── GET /api/issues/:id ──────────────────────────────────────────────────────
 export const getIssueById = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
@@ -113,7 +110,6 @@ export const getIssueById = async (req: Request, res: Response): Promise<void> =
   sendSuccess(res, issueWithReporter);
 };
 
-// ─── PATCH /api/issues/:id ────────────────────────────────────────────────────
 export const updateIssue = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const { title, description, type, status }: UpdateIssueBody = req.body;
@@ -195,7 +191,6 @@ export const updateIssue = async (req: Request, res: Response): Promise<void> =>
   sendSuccess(res, updatedIssue, 'Issue updated successfully');
 };
 
-// ─── DELETE /api/issues/:id ───────────────────────────────────────────────────
 export const deleteIssue = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
 
