@@ -5,7 +5,7 @@
 ## Live URL
 
 ```
-https://your-deployment-url.vercel.app
+https://l2-a2-dev-pulse-server-with-postgre.vercel.app/
 ```
 
 ## Tech Stack
